@@ -11,6 +11,7 @@ import SignUp from './pages/SignUp';
 import Dashboard from './pages/Dashboard';
 import PostJob from './pages/PostJob';
 import JobDetail from './pages/JobDetail';
+import UserProfile from './pages/UserProfile';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -34,17 +35,24 @@ export default function App() {
         <Navbar />
         <main className="flex-1">
           <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/companies" element={<Companies />} />
+            <Route path="/"              element={<Home />} />
+            <Route path="/companies"     element={<Companies />} />
             <Route path="/company/:name" element={<CompanyDetail />} />
-            <Route path="/network" element={<Network />} />
-            <Route path="/job/:id" element={<JobDetail />} />
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/signup" element={<SignUp />} />
-            <Route path="/inbox"     element={<PrivateRoute><Inbox /></PrivateRoute>} />
-            <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
-            <Route path="/postjob"   element={<EmployerRoute><PostJob /></EmployerRoute>} />
-            <Route path="*" element={<div className="text-center py-32"><i className="fas fa-exclamation-circle text-gray-200 text-5xl mb-4 block"></i><h2 className="text-2xl font-bold text-gray-500">Page Not Found</h2><a href="/" className="text-blue-600 hover:underline mt-2 block">Go Home</a></div>} />
+            <Route path="/network"       element={<Network />} />
+            <Route path="/job/:id"       element={<JobDetail />} />
+            <Route path="/signin"        element={<SignIn />} />
+            <Route path="/signup"        element={<SignUp />} />
+            <Route path="/profile/:id"   element={<UserProfile />} />
+            <Route path="/inbox"         element={<PrivateRoute><Inbox /></PrivateRoute>} />
+            <Route path="/dashboard"     element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+            <Route path="/postjob"       element={<EmployerRoute><PostJob /></EmployerRoute>} />
+            <Route path="*" element={
+              <div className="text-center py-32">
+                <i className="fas fa-exclamation-circle text-gray-200 text-5xl mb-4 block"></i>
+                <h2 className="text-2xl font-bold text-gray-500">Page Not Found</h2>
+                <a href="/" className="text-blue-600 hover:underline mt-2 block">Go Home</a>
+              </div>
+            } />
           </Routes>
         </main>
         <footer className="bg-white border-t border-gray-100 py-8">

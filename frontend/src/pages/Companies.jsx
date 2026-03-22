@@ -47,9 +47,9 @@ export default function Companies() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {enriched.map(c => (
             <div key={c.name} onClick={()=>navigate(`/company/${encodeURIComponent(c.name)}`)}
-              className="bg-white rounded-2xl border border-gray-100 overflow-hidden cursor-pointer hover:shadow-xl hover:border-blue-200 transition-all group">
+              className="bg-white rounded-2xl border border-gray-100 cursor-pointer hover:shadow-xl hover:border-blue-200 transition-all group">
               {/* Cover image */}
-              <div className="relative h-32 overflow-hidden">
+              <div className="relative h-32 overflow-hidden rounded-t-2xl">
                 <img
                   src={getCompanyCover(c.name)}
                   alt={c.name}
@@ -62,7 +62,7 @@ export default function Companies() {
 
               {/* Body */}
               <div className="p-4">
-                <div className="flex items-center gap-3 -mt-8 mb-3">
+                <div className="flex items-center gap-3 -mt-8 mb-3 relative z-10">
                   <img src={getCompanyLogo(c.name)} alt={c.name} className="w-12 h-12 rounded-xl border-2 border-white shadow-md" />
                   <div className="pt-3">
                     <h3 className="font-bold text-gray-900 group-hover:text-blue-600 transition">{c.name}</h3>

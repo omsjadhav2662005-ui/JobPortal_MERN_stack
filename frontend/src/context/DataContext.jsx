@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import API from '../api';
 
 const DataContext = createContext();
@@ -13,10 +13,37 @@ export const DataProvider = ({ children }) => {
   const [loading, setLoading]       = useState(true);
   const [jobMeta, setJobMeta]       = useState({ total: 0, page: 1, pages: 1 });
 
+  // Polling refs
+  const pollRef      = useRef(null);
+  const pollActive   = useRef(false);
+
   useEffect(() => {
     fetchJobs(); fetchCompanies();
     if (localStorage.getItem('token')) { fetchUsers(); fetchConversations(); fetchMyApplications(); }
   }, []);
+
+  // ── Polling: refresh conversations every 3 s when user is logged in ──
+  const startPolling = useCallback(() => {
+    if (pollActive.current) return;
+    pollActive.current = true;
+    pollRef.current = setInterval(async () => {
+      if (!localStorage.getItem('token')) { stopPolling(); return; }
+      try {
+        const { data } = await API.get('/conversations');
+        setConvs(data);
+      } catch { /* silently ignore */ }
+    }, 3000);
+  }, []);
+
+  const stopPolling = useCallback(() => {
+    pollActive.current = false;
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+  }, []);
+
+  useEffect(() => {
+    if (localStorage.getItem('token')) startPolling();
+    return stopPolling;
+  }, [startPolling, stopPolling]);
 
   const fetchJobs = async (params = {}) => {
     try { setLoading(true); const q = new URLSearchParams({ limit:12, ...params }).toString(); const { data } = await API.get(`/jobs?${q}`); setJobs(data.jobs); setJobMeta({ total:data.total, page:data.page, pages:data.pages }); }
@@ -44,7 +71,11 @@ export const DataProvider = ({ children }) => {
   const removeConnection      = async (id) => { await API.delete(`/users/connections/${id}`); };
 
   const getOrCreateConv = async (recipientId) => { const { data } = await API.post('/conversations', { recipientId }); await fetchConversations(); return data; };
-  const sendMessage     = async (convId, text) => { const { data } = await API.post(`/conversations/${convId}/messages`, { text }); setConvs(p => p.map(c => c._id===convId ? data : c)); return data; };
+  const sendMessage     = async (convId, text) => {
+    const { data } = await API.post(`/conversations/${convId}/messages`, { text });
+    setConvs(p => p.map(c => c._id===convId ? data : c));
+    return data;
+  };
   const markMsgsRead    = async (convId) => { await API.put(`/conversations/${convId}/read`); };
 
   return <DataContext.Provider value={{
@@ -54,5 +85,6 @@ export const DataProvider = ({ children }) => {
     getCompanyByName, addReview,
     sendConnectionRequest, respondToConnection, removeConnection,
     getOrCreateConv, sendMessage, markMsgsRead,
+    startPolling, stopPolling,
   }}>{children}</DataContext.Provider>;
 };

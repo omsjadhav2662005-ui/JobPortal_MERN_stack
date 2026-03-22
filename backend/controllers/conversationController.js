@@ -48,6 +48,38 @@ const sendMessage = async (req, res, next) => {
     conversation.messages.push({ from: req.user._id, text, read: false });
     conversation.updatedAt = Date.now();
     await conversation.save();
+
+    // Notify the recipient if they are not the sender
+    const recipientId = conversation.participants.find(
+      p => p.toString() !== req.user._id.toString()
+    );
+    if (recipientId) {
+      const recipient = await User.findById(recipientId);
+      if (recipient) {
+        // Only add a new notification if the last one from this sender isn't already unread
+        // This avoids spamming the bell on every single message in a burst
+        const lastNotif = recipient.notifications[0];
+        const alreadyPending =
+          lastNotif &&
+          !lastNotif.read &&
+          lastNotif.type === 'message' &&
+          lastNotif.link === '/inbox';
+
+        if (!alreadyPending) {
+          recipient.notifications.unshift({
+            message: `${req.user.name} sent you a message`,
+            type: 'message',
+            link: '/inbox',
+          });
+          // Keep notifications array from growing unbounded
+          if (recipient.notifications.length > 50) {
+            recipient.notifications = recipient.notifications.slice(0, 50);
+          }
+          await recipient.save();
+        }
+      }
+    }
+
     const updatedConv = await Conversation.findById(conversation._id)
       .populate('participants', 'name email profilePicture headline')
       .populate('messages.from', 'name email profilePicture');
