@@ -31,7 +31,12 @@ export default function Home() {
     setPage(1); fetchJobs(p);
   }, [search, location, type, cat, level, sort, fetchJobs]);
 
-  const loadMore = () => { const next=page+1; setPage(next); fetchJobs({ page:next, search, location, ...(type!=='All'&&{type}), ...(cat!=='All'&&{category:cat}), sort }); };
+  const goToPage = (p) => {
+    if (p < 1 || p > jobMeta.pages) return;
+    setPage(p);
+    fetchJobs({ page:p, sort, ...(search&&{search}), ...(location&&{location}), ...(type!=='All'&&{type}), ...(cat!=='All'&&{category:cat}), ...(level!=='All'&&{level}) });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const reset    = () => { setSearch(''); setLoc(''); setType('All'); setCat('All'); setLevel('All'); setSort('recent'); fetchJobs({}); };
 
   const handleCatClick = (c) => { setCat(c); setShowCats(false); doSearch({ category:c }); };
@@ -141,12 +146,53 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {jobs.map(job=><JobCard key={job._id} job={job} />)}
             </div>
-            {page < jobMeta.pages && (
-              <div className="text-center mt-10">
-                <button onClick={loadMore} className="border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white px-8 py-3 rounded-xl font-semibold transition">
-                  Load more <i className="fas fa-chevron-down ml-1"></i>
+            {/* Pagination */}
+            {jobMeta.pages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-10 flex-wrap">
+                {/* Previous */}
+                <button
+                  onClick={() => goToPage(page - 1)}
+                  disabled={page === 1}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                  <i className="fas fa-chevron-left text-xs"></i> Previous
+                </button>
+
+                {/* Page numbers */}
+                {Array.from({ length: jobMeta.pages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === jobMeta.pages || Math.abs(p - page) <= 1)
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...');
+                    acc.push(p);
+                    return acc;
+                  }, [])
+                  .map((p, i) =>
+                    p === '...'
+                      ? <span key={`dot-${i}`} className="px-2 text-gray-400 text-sm">…</span>
+                      : <button
+                          key={p}
+                          onClick={() => goToPage(p)}
+                          className={`w-10 h-10 rounded-xl text-sm font-bold transition
+                            ${page === p
+                              ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
+                              : 'border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                          {p}
+                        </button>
+                  )}
+
+                {/* Next */}
+                <button
+                  onClick={() => goToPage(page + 1)}
+                  disabled={page === jobMeta.pages}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition disabled:opacity-40 disabled:cursor-not-allowed">
+                  Next <i className="fas fa-chevron-right text-xs"></i>
                 </button>
               </div>
+            )}
+            {/* Page info */}
+            {jobMeta.pages > 1 && (
+              <p className="text-center text-xs text-gray-400 mt-3">
+                Page {page} of {jobMeta.pages} · {jobMeta.total} jobs total
+              </p>
             )}
           </>
         )}
